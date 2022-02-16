@@ -333,7 +333,7 @@ class WikiForumHooks {
 		$echoNotifications['wikiforum-reply'] = [
 			'category' => 'wikiforum-reply',
 			'group' => 'positive',
-			'section' => 'message',
+			'section' => 'alert',
 			'bundle' => [
     			'web' => true,
     			'expandable' => true,
