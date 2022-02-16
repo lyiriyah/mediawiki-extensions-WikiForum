@@ -298,4 +298,57 @@ class WikiForumHooks {
 		$updater->modifyExtensionField( 'wikiforum_replies', 'wfr_actor', "$dir/patches/actor/add-default-to-wfr_actor.sql" );
 		$updater->modifyExtensionField( 'wikiforum_replies', 'wfr_edit_actor', "$dir/patches/actor/add-default-to-wfr_edit_actor.sql" );
 	}
+
+	/**
+	 * Send a notification for a WF entity event
+	 *
+	 * @param string $entity class of WF entity
+	 * @param int $id database id of WF entity
+	 */
+	public static function sendNotification( $entity, $id ) {
+		global $wgWikiForumNotificationType;
+
+		if ( class_exists( $entity ) && method_exists( $entity, 'notify' ) ) {
+			// TODO: Check for notification type (eg. Echo) existence
+			$entity::notify( $wgWikiForumNotificationType, $id );
+		} else {
+			// TODO: Log entity error
+		}
+	}
+
+	/**
+	 * @param array &$echoNotifications
+	 * @param array $echoNotificationCategories
+	 * @return bool
+	 */
+	public static function onBeforeCreateEchoEvent(
+		&$echoNotifications, $echoNotificationCategories, &$icons
+	) {
+		$notificationCategories['wikiforum-reply'] = [
+			'priority' => 3,
+			'tooltip' => 'echo-pref-tooltip-wikiforum-reply',
+		];
+
+		// Echo notification for thread reply
+		$echoNotifications['wikiforum-reply'] = [
+			'category' => 'wikiforum-reply',
+			'group' => 'positive',
+			'section' => 'message',
+			'bundle' => [
+    			'web' => true,
+    			'expandable' => true,
+    		],
+			'presentation-model' => EchoWFReplyPresentationModel::class,
+			// 'formatter-class' => EchoWFFormatter::class, // TODO: Implement this?
+			'user-locators' => [ 'WFThread::getUsersInThreadFromEchoEvent' ],
+			// Reference: https://www.mediawiki.org/wiki/Extension:Echo/Creating_a_new_notification_type#Defining_the_event
+			// 'user-filters' => [ 'MyExtensionClass::locateMentionedUsers' ] // TODO: Filter users that opt out?
+		];
+
+		$icons['wikiforum-reply'] = [
+			'path' => '/Echo/modules/icons/speechBubbles-ltr.svg',
+		];
+
+		return true;
+	}
 }
