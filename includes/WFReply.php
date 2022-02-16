@@ -392,6 +392,8 @@ class WFReply extends ContextSource {
 			return WikiForum::showErrorMessage( 'wikiforum-error-add', 'wikiforum-error-general' );
 		}
 
+		$replyId = $dbw->insertId();
+
 		$dbw->update(
 			'wikiforum_threads',
 			[
@@ -411,6 +413,14 @@ class WFReply extends ContextSource {
 			__METHOD__
 		);
 
+		Hooks::run(
+			'WFSendNotification',
+			[
+				self::class,
+				$replyId,
+			]
+		);
+
 		$logEntry = new ManualLogEntry( 'forum', 'add-reply' );
 		$logEntry->setPerformer( $user );
 		$logEntry->setTarget( SpeciaLPage::getTitleFor( 'WikiForum' ) );
@@ -425,6 +435,40 @@ class WFReply extends ContextSource {
 		}
 
 		return $thread->show();
+	}
+
+	/**
+	 * Send notification for a new WFReply
+	 *
+	 * @param string $notificationType notification plugin type
+	 * @param int $id WFReply id
+	 */
+	static function notify( $notificationType, $id ) {
+		$reply = self::newFromID( $id );
+
+		if ( !empty( $reply ) ) {
+			$reply->getThread();
+
+			switch ( $notificationType ) {
+				case 'echo':
+				default:
+					EchoEvent::create( [
+						'type' => 'wikiforum-reply',
+						'title' => SpecialPage::getTitleFor(
+							'WikiForum',
+							$reply->thread->getName(),
+							'reply_' . $reply->getId()
+						),
+						'extra' => [
+							'thread-id' => $reply->thread->getId(),
+							'url' => $reply->thread->getURL( $reply->getId() ),
+							'excerpt' => substr($reply->getText(), 0, 64), // TODO: Improve this
+						],
+						// 'agent' => $reply->getPostedBy(), // TODO: Determine if this prevents notification to originator
+					] );
+					break;
+			}
+		}
 	}
 
 	/**

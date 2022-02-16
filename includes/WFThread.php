@@ -301,6 +301,55 @@ class WFThread extends ContextSource {
 	}
 
 	/**
+     * @param integer $id
+     * @return array
+     */
+    public static function getUsersInThread( $id ) {
+		$userIds = [];
+
+		// Get thread actor
+		$dbr = wfGetDB( DB_REPLICA );
+
+		// Get thread actor and reply actors as JOIN (more efficient)
+		$res = $dbr->select(
+			[ 'wikiforum_replies', 'wikiforum_threads' ],
+			[
+				'reply_user' => 'DISTINCT wfr_actor',
+				'thread_user' => 'wft_actor',
+			],
+			[ 'wfr_thread' => $id, ],
+			__METHOD__,
+			[],
+			[
+				'wikiforum_threads' => [ 'INNER JOIN', [ 'wfr_thread=wft_thread' ] ]
+			]
+		);
+
+		foreach ( $res as $index => $row ) {
+			if ( $index === 0) {
+				$userIds[] = $row->thread_user;
+			}
+
+			if ( !in_array( $row->reply_user, $userIds ) ) {
+				$userIds[] = $row->reply_user;
+			}
+		}
+
+        // Return the list of users
+        return array_map( function ( $userId ) {
+            return User::newFromId( $userId );
+        }, $userIds );
+    }
+
+	/**
+     * @param EchoEvent $event
+     * @return array
+     */
+	public static function getUsersInThreadFromEchoEvent( EchoEvent $event ) {
+		return self::getUsersInThread( $event->getExtraParam( 'thread-id' ) );
+	}
+
+	/**
 	 * Add a reply to this thread
 	 *
 	 * @param string $text user-supplied reply text

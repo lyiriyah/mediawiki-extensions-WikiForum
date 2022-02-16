@@ -64,7 +64,8 @@
 		"WFReply": "includes/WFReply.php",
 		"WFThread": "includes/WFThread.php",
 		"WFForum": "includes/WFForum.php",
-		"WFCategory": "includes/WFCategory.php"
+		"WFCategory": "includes/WFCategory.php",
+		"EchoWFReplyPresentationModel": "includes/echo/EchoWFReplyPresentationModel.php"
 	},
 	"ResourceModules": {
 		"ext.wikiForum": {
@@ -77,14 +78,17 @@
 	},
 	"Hooks": {
 		"ParserFirstCallInit": "WikiForumHooks::registerParserHooks",
-		"LoadExtensionSchemaUpdates": "WikiForumHooks::onLoadExtensionSchemaUpdates"
+		"LoadExtensionSchemaUpdates": "WikiForumHooks::onLoadExtensionSchemaUpdates",
+		"WFSendNotification": "WikiForumHooks::sendNotification",
+		"BeforeCreateEchoEvent": "WikiForumHooks::onBeforeCreateEchoEvent"
 	},
 	"CaptchaTriggers": {
 		"wikiforum": true
 	},
 	"config": {
 		"WikiForumAllowAnonymous": true,
-		"WikiForumLogInRC": true
+		"WikiForumLogInRC": true,
+		"WikiForumNotificationType": "echo"
 	},
 	"manifest_version": 1
 }
